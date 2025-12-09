@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vision Lab - ビジョントレーニングメニュー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- フォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #05070a;
+      --accent: #00b0ff;
+      --accent-soft: rgba(0, 176, 255, 0.25);
+      --text: #e5f6ff;
+      --muted: #7f8ea3;
+      --border: #1b2333;
+      --card-radius: 20px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0b1220 0, #020308 45%, #000 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1150px;
+      background: linear-gradient(135deg, rgba(0,176,255,0.12), rgba(0,0,0,0.9));
+      border-radius: 28px;
+      border: 1px solid rgba(0,176,255,0.25);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 22px 26px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% -10%, rgba(0,176,255,0.22), transparent 55%),
+        radial-gradient(circle at 80% 120%, rgba(0,176,255,0.16), transparent 55%);
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      align-items: baseline;
+      margin-bottom: 18px;
+      border-bottom: 1px solid rgba(0,176,255,0.22);
+      padding-bottom: 12px;
+    }
+
+    .logo-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 2px solid rgba(0,176,255,0.7);
+      box-shadow:
+        0 0 16px rgba(0,176,255,0.9),
+        inset 0 0 10px rgba(0,176,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .title-main {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      background: rgba(0,0,0,0.55);
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 0.84rem;
+      color: var(--muted);
+      max-width: 520px;
+    }
+
+    .layout-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 960px) {
+      .layout-main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .hero-card {
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      background:
+        radial-gradient(circle at top left, rgba(0,176,255,0.16), rgba(4,7,18,0.97));
+      padding: 14px 16px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(56,189,248,0.16), transparent 55%),
+        radial-gradient(circle at 120% 20%, rgba(59,130,246,0.18), transparent 55%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-tagline {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .hero-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .metric-chip {
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.74rem;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.86);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(0,176,255,0.9);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .hero-mini {
+      border-radius: 14px;
+      border: 1px solid rgba(30,64,175,0.8);
+      background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(8,47,73,0.9));
+      padding: 8px 10px;
+      font-size: 0.78rem;
+    }
+
+    .hero-mini-title {
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: #e0f2fe;
+    }
+
+    .hero-mini-desc {
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .hero-footer {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hero-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      border-radius: 999px;
+      border: none;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 8px 18px rgba(0,132,255,0.6);
+      text-decoration: none;
+      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(0,132,255,0.75);
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      padding: 7px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15,23,42,0.9);
+      color: var(--muted);
+      text-decoration: none;
+      transition: background 0.12s ease-out, color 0.12s ease-out, border-color 0.12s ease-out;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(30,41,59,0.95);
+      color: var(--text);
+      border-color: rgba(148,163,184,0.9);
+    }
+
+    /* 右側：メニューカード群 */
+    .menu-card {
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top, rgba(0,176,255,0.16), rgba(3,7,18,0.98));
+      padding: 14px 14px 16px;
+    }
+
+    .menu-title {
+      font-size: 0.96rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .menu-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .tool-card {
+      border-radius: 16px;
+      border: 1px solid rgba(30,64,175,0.85);
+      background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(8,47,73,0.92));
+      padding: 8px 10px 9px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tool-main-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: #e0f2fe;
+    }
+
+    .tool-tag {
+      font-size: 0.7rem;
+      color: var(--accent);
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,176,255,0.6);
+      background: rgba(15,23,42,0.9);
+      display: inline-block;
+      margin-bottom: 3px;
+    }
+
+    .tool-desc {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .tool-meta {
+      font-size: 0.72rem;
+      color: #9ca3af;
+      margin-top: 3px;
+    }
+
+    .tool-action {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .tool-link {
+      border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 0.78rem;
+      border: none;
+      cursor: pointer;
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 6px 14px rgba(0,132,255,0.6);
+      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out;
+    }
+
+    .tool-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(0,132,255,0.75);
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      font-size: 0.74rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-note span.highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ▼ ダッシュボードカード ▼ */
+    .dashboard-card {
+      margin-top: 18px;
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top, rgba(15,23,42,0.98), rgba(2,6,23,1));
+      padding: 14px 16px 16px;
+    }
+
+    .dashboard-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .dashboard-title {
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+
+    .dashboard-subtitle {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .chart-card {
+      border-radius: 14px;
+      border: 1px solid rgba(30,64,175,0.85);
+      background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(8,47,73,0.94));
+      padding: 8px 10px 10px;
+    }
+
+    .chart-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #e0f2fe;
+    }
+
+    .chart-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 180px !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo-line">
+        <div class="logo-mark">V-LAB</div>
+        <div>
+          <div class="title-main">VISION LAB</div>
+          <div style="font-size:0.78rem; color:#9ca3af;">Soccer Vision Training Suite</div>
+        </div>
+      </div>
+      <div class="subtitle">
+        サッカーのための「見る力」を4つのモジュールで数値化し、鍛え続けるためのビジョントレーニング・ラボ。
+        日々のセッション結果はCSVで保存し、成長カーブを分析できます。
+      </div>
+      <span class="badge">BLUE-LOCK STYLE</span>
+    </header>
+
+    <main class="layout-main">
+      <!-- 左：ハイライト & 全体説明 -->
+      <section class="hero-card">
+        <div class="hero-inner">
+          <div class="hero-title">
+            今日のメニューを選択
+          </div>
+          <div class="hero-tagline">
+            まずは「1種目だけ」でもOK。疲れている日は反応系だけ、集中したい日はノールック＋予測…など、
+            コンディションに合わせて組み合わせられます。
+          </div>
+
+          <div class="hero-metrics">
+            <div class="metric-chip">
+              <span class="metric-dot"></span> 360°瞬間認知
+            </div>
+            <div class="metric-chip">
+              <span class="metric-dot"></span> 軌道・数秒後予測
+            </div>
+            <div class="metric-chip">
+              <span class="metric-dot"></span> ノールック周辺視
+            </div>
+            <div class="metric-chip">
+              <span class="metric-dot"></span> スキャン頻度（回/分）
+            </div>
+          </div>
+
+          <div class="hero-grid">
+            <div class="hero-mini">
+              <div class="hero-mini-title">おすすめセット（試合前）</div>
+              <div class="hero-mini-desc">
+                ・360°瞬間認知（短時間×2〜3セット）<br>
+                ・スキャン頻度（30秒〜60秒）<br>
+                試合前の「視野の立ち上げ」として。
+              </div>
+            </div>
+            <div class="hero-mini">
+              <div class="hero-mini-title">おすすめセット（トレーニング日）</div>
+              <div class="hero-mini-desc">
+                ・ノールック認知 → 動き予測（曲線あり）<br>
+                ・最後にスキャン頻度で締め<br>
+                「予測」と「視野の広さ」を同時に鍛える構成。
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-footer">
+            <div class="hero-note">
+              4つのツールはすべてブラウザだけで動作。<br>
+              セッション結果は CSV としてダウンロードできます。
+            </div>
+            <div class="btn-row">
+              <a href="flash360.html" class="btn-primary">
+                まずは 360°瞬間認知から
+              </a>
+              <a href="#" class="btn-ghost" onclick="alert('GitHub Pages やローカル環境でもそのまま動作します。各HTMLを同じフォルダに置いてください。'); return false;">
+                使い方メモ
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右：各ツールへのメニュー -->
+      <section class="menu-card">
+        <div class="menu-title">
+          トレーニングメニュー
+          <span style="font-size:0.74rem; color:var(--muted);">クリックで各ツールへ</span>
+        </div>
+        <div class="menu-sub">
+          気になる種目を選んで、個別画面へ移動します。ブラウザの戻るボタンで、このメニューに戻れます。
+        </div>
+
+        <div class="menu-grid">
+          <article class="tool-card">
+            <div>
+              <div class="tool-tag">瞬間認知 / 広さ</div>
+              <div class="tool-main-title">360°瞬間認知トレーニング</div>
+              <div class="tool-desc">
+                短時間だけ表示される複数ターゲットを、一度にどれだけ正確に覚えられるか。
+                ピッチ全体を「一枚の図」として捉える感覚を鍛えます。
+              </div>
+              <div class="tool-meta">
+                指標：正答率 / 誤差 / 配置パターンごとの得意・不得意
+              </div>
+            </div>
+            <div class="tool-action">
+              <a href="flash360.html" class="tool-link">
+                開く
+                <span>▶</span>
+              </a>
+            </div>
+          </article>
+
+          <article class="tool-card">
+            <div>
+              <div class="tool-tag">予測 / 認知スピード</div>
+              <div class="tool-main-title">動きが途中で消える予測</div>
+              <div class="tool-desc">
+                直線・カーブ・ジグザグの軌道が途中で消えたあと、
+                数秒後のボール位置を予測。パスコースやこぼれ球の「先」を読む力を鍛えます。
+              </div>
+              <div class="tool-meta">
+                指標：誤差px / 軌道タイプ別の精度 / 予測時間オフセット
+              </div>
+            </div>
+            <div class="tool-action">
+              <a href="predict.html" class="tool-link">
+                開く
+                <span>▶</span>
+              </a>
+            </div>
+          </article>
+
+          <article class="tool-card">
+            <div>
+              <div class="tool-tag">周辺視 / ノールック</div>
+              <div class="tool-main-title">ノールック周辺視認知</div>
+              <div class="tool-desc">
+                中央の「＋」から目を離さない意識のまま、周辺に一瞬出るターゲットの位置を再現。
+                見ていない方向の味方・敵を感じ取る力を数値化します。
+              </div>
+              <div class="tool-meta">
+                指標：平均誤差 / 命中率 / 左右・上下の正答率
+              </div>
+            </div>
+            <div class="tool-action">
+              <a href="nolook.html" class="tool-link">
+                開く
+                <span>▶</span>
+              </a>
+            </div>
+          </article>
+
+          <article class="tool-card">
+            <div>
+              <div class="tool-tag">スキャン頻度 / 反応</div>
+              <div class="tool-main-title">スキャン頻度トレーニング</div>
+              <div class="tool-desc">
+                一定時間内に、ランダムに現れるターゲットを何回キャッチできるか。
+                実戦に近い「首振りの回数/分」と反応時間の感覚を、指標として可視化します。
+              </div>
+              <div class="tool-meta">
+                指標：回数/分 / 平均反応時間 / 視線の左右・上下バランス
+              </div>
+            </div>
+            <div class="tool-action">
+              <a href="scan.html" class="tool-link">
+                開く
+                <span>▶</span>
+              </a>
+            </div>
+          </article>
+        </div>
+
+        <div class="footer-note">
+          <span>
+            すべてのツールは <span class="highlight">オフラインでも動作</span> するシンプルなHTML/JS構成です。
+          </span>
+          <span>
+            CSVをまとめてスプレッドシートに入れて、月ごとの成長カーブを見るのもおすすめです。
+          </span>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>360°瞬間認知トレーニング - Vision Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- フォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #05070a;
+      --bg-alt: #070b12;
+      --accent: #00b0ff;
+      --accent-soft: rgba(0, 176, 255, 0.25);
+      --danger: #ff3b6b;
+      --text: #e5f6ff;
+      --muted: #7f8ea3;
+      --border: #1b2333;
+      --card-radius: 18px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0b1220 0, #020308 45%, #000 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1150px;
+      background: linear-gradient(135deg, rgba(0,176,255,0.12), rgba(0,0,0,0.8));
+      border-radius: 26px;
+      border: 1px solid rgba(0,176,255,0.25);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 22px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% -10%, rgba(0,176,255,0.18), transparent 55%),
+        radial-gradient(circle at 80% 120%, rgba(0,176,255,0.12), transparent 55%);
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: baseline;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(0,176,255,0.22);
+      padding-bottom: 10px;
+    }
+
+    .title-main {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-main span.badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      background: rgba(0,0,0,0.55);
+      color: var(--accent);
+      text-transform: none;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 420px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(0,176,255,0.12), rgba(3,7,18,0.96));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,0.02);
+      pointer-events: none;
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ヘッダー右上のナビボタン */
+    .header-nav {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15,23,42,0.9);
+      color: var(--muted);
+      text-decoration: none;
+      transition: background 0.12s ease-out, color 0.12s ease-out, border-color 0.12s ease-out, transform 0.08s ease-out;
+    }
+
+    .nav-btn:hover {
+      background: rgba(30,41,59,0.95);
+      color: var(--text);
+      border-color: rgba(148,163,184,0.9);
+      transform: translateY(-0.5px);
+    }
+
+    .nav-btn.primary {
+      border: none;
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 6px 14px rgba(0,132,255,0.6);
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 9px 20px rgba(0,132,255,0.75);
+    }
+
+    .badge-mini {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,176,255,0.38);
+      color: var(--accent);
+      background: rgba(0,0,0,0.7);
+    }
+
+    /* フィールド */
+    .field-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 520px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 2px solid rgba(0,176,255,0.7);
+      box-shadow:
+        0 0 25px rgba(0,176,255,0.38),
+        inset 0 0 25px rgba(0,176,255,0.18);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(0,176,255,0.16), transparent 55%),
+        radial-gradient(circle at 30% 80%, rgba(0,176,255,0.12), transparent 60%),
+        radial-gradient(circle at 50% 50%, #020617, #000);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    .hint-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .dot-target,
+    .dot-guess {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .dot-target {
+      background: radial-gradient(circle at 30% 30%, #e0f7ff, var(--accent));
+      box-shadow: 0 0 12px rgba(0,176,255,0.9);
+    }
+
+    .dot-guess {
+      background: radial-gradient(circle at 30% 30%, #fff3e0, #ffc400);
+      box-shadow: 0 0 10px rgba(255,196,0,0.9);
+    }
+
+    .field-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+      background: radial-gradient(circle at center, rgba(10,14,26,0.9), rgba(2,6,23,0.94));
+      backdrop-filter: blur(6px);
+      border-radius: 50%;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .field-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+    }
+
+    .field-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.18s ease-out;
+    }
+
+    /* コントロール */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .control-label span.value {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out, opacity 0.12s.ease-out;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 8px 18px rgba(0,132,255,0.55);
+    }
+
+    button.primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(0,132,255,0.7);
+    }
+
+    button.ghost {
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.7);
+      color: var(--muted);
+    }
+
+    button.ghost:hover:not(:disabled) {
+      background: rgba(30,41,59,0.9);
+      color: var(--text);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+
+    .status-text strong {
+      color: var(--accent);
+    }
+
+    /* スコアカード */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .stat-chip {
+      border-radius: 12px;
+      border: 1px solid rgba(30,64,175,0.75);
+      background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(8,47,73,0.9));
+      padding: 6px 8px;
+      font-size: 0.76rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e0f2fe;
+    }
+
+    /* 履歴 */
+    .history {
+      margin-top: 10px;
+      border-top: 1px dashed rgba(148,163,184,0.35);
+      padding-top: 8px;
+    }
+
+    .history-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .history-title-row h3 {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .history-list {
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 4px;
+      font-size: 0.75rem;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px dotted rgba(30,64,175,0.5);
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-metric {
+      color: #e0f2fe;
+    }
+
+    .history-meta {
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,0.5);
+      border-radius: 999px;
+    }
+
+    /* ミニグラフ */
+    .chart-block {
+      margin-top: 10px;
+      border-top: 1px dashed rgba(148,163,184,0.35);
+      padding-top: 8px;
+    }
+
+    .chart-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .chart-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 170px !important;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-main">
+        Vision Lab: 360°瞬間認知
+        <span class="badge">BLUE-LOCK STYLE</span>
+
+        <div class="header-nav">
+          <button class="nav-btn" onclick="history.back()">← 戻る</button>
+          <a href="index.html" class="nav-btn primary">Home</a>
+        </div>
+      </div>
+      <div class="subtitle">
+        一瞬で「全方位の配置」をつかむ感覚を鍛えるトレーニング。<br/>
+        青いドットが一瞬だけ現れるので、消えたあとにその位置をできるだけ正確に再現していきます。
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- 左：フィールド -->
+      <section class="card">
+        <h2>
+          フィールド
+          <span class="badge-mini">360° Awareness</span>
+        </h2>
+        <div class="field-wrapper">
+          <div id="field" class="field">
+            <div id="fieldOverlay" class="field-overlay visible">
+              <div>
+                <div style="font-size:0.95rem; margin-bottom:4px;">「トライ開始」を押してスタート</div>
+                <div style="font-size:0.8rem; color:#9ca3af;">
+                  青いドットの位置を覚えよう。表示が消えたら、<br/>
+                  覚えている位置を円の中にクリックしていきます。
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="hint" class="hint-text"></div>
+        </div>
+      </section>
+
+      <!-- 右：コントロール＆スコア -->
+      <section class="card">
+        <h2>
+          トレーニング設定 ＆ スコア
+          <span class="badge-mini">Session Control</span>
+        </h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <div class="control-label">
+              <span>ターゲット数</span>
+              <span class="value"><span id="targetCountValue">6</span> 個</span>
+            </div>
+            <input id="targetCountInput" type="range" min="3" max="12" step="1" value="6">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>表示時間</span>
+              <span class="value"><span id="displayTimeValue">500</span> ms</span>
+            </div>
+            <input id="displayTimeInput" type="range" min="200" max="1200" step="100" value="500">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>命中判定しきい値</span>
+              <span class="value"><span id="thresholdValue">30</span> px</span>
+            </div>
+            <input id="thresholdInput" type="range" min="10" max="60" step="5" value="30">
+          </div>
+
+          <div class="button-row">
+            <button id="startBtn" class="primary">▶ トライ開始</button>
+            <button id="resetBtn" class="ghost">リセット</button>
+            <button id="downloadBtn" class="ghost">CSVダウンロード</button>
+          </div>
+
+          <div id="status" class="status-text"></div>
+
+          <div class="stats-grid">
+            <div class="stat-chip">
+              <div class="stat-label">今回の平均誤差</div>
+              <div class="stat-value"><span id="avgError">-</span> px</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">今回の命中率</div>
+              <div class="stat-value"><span id="hitRate">-</span> %</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">セッション数</div>
+              <div class="stat-value"><span id="sessionCount">0</span> 回</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">全体平均誤差</div>
+              <div class="stat-value"><span id="globalAvgError">-</span> px</div>
+            </div>
+          </div>
+
+          <div class="history">
+            <div class="history-title-row">
+              <h3>トレーニング履歴</h3>
+            </div>
+            <div id="historyList" class="history-list scrollbar-thin">
+              <!-- 履歴が入る -->
+            </div>
+          </div>
+
+          <!-- ミニグラフ -->
+          <div class="chart-block">
+            <div class="chart-title">平均誤差の推移（直近10トライ）</div>
+            <div class="chart-sub">小さいほど「一瞬での把握精度」が高いイメージ。</div>
+            <canvas id="flashChart"></canvas>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /* ▼ Vision Lab 共通ログ保存 ▼ */
+    function saveVisionLabLog(tool, payload) {
+      try {
+        const key = "visionLabLogs";
+        const logs = JSON.parse(localStorage.getItem(key) || "[]");
+        logs.push({
+          tool,                     // "flash360" / "predict" / "nolook" / "scan"
+          time: new Date().toISOString(),
+          ...payload
+        });
+        localStorage.setItem(key, JSON.stringify(logs));
+      } catch (e) {
+        console.warn("Vision Lab log save failed:", e);
+      }
+    }
+
+    const field = document.getElementById("field");
+    const fieldOverlay = document.getElementById("fieldOverlay");
+    const hintEl = document.getElementById("hint");
+    const statusEl = document.getElementById("status");
+
+    const targetCountInput = document.getElementById("targetCountInput");
+    const targetCountValue = document.getElementById("targetCountValue");
+    const displayTimeInput = document.getElementById("displayTimeInput");
+    const displayTimeValue = document.getElementById("displayTimeValue");
+    const thresholdInput = document.getElementById("thresholdInput");
+    const thresholdValue = document.getElementById("thresholdValue");
+
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const avgErrorEl = document.getElementById("avgError");
+    const hitRateEl = document.getElementById("hitRate");
+    const sessionCountEl = document.getElementById("sessionCount");
+    const globalAvgErrorEl = document.getElementById("globalAvgError");
+    const historyListEl = document.getElementById("historyList");
+
+    let state = "idle"; // "idle" | "show" | "answer"
+    let targets = [];
+    let guesses = [];
+    let trials = [];
+    let trialIdCounter = 1;
+
+    // UI 更新（スライダー表示）
+    targetCountInput.addEventListener("input", () => {
+      targetCountValue.textContent = targetCountInput.value;
+    });
+    displayTimeInput.addEventListener("input", () => {
+      displayTimeValue.textContent = displayTimeInput.value;
+    });
+    thresholdInput.addEventListener("input", () => {
+      thresholdValue.textContent = thresholdInput.value;
+    });
+
+    // トライ開始
+    startBtn.addEventListener("click", () => {
+      if (state !== "idle") return;
+      startTrial();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      resetField();
+      state = "idle";
+      hintEl.textContent = "";
+      statusEl.textContent = "フィールドをリセットしました。";
+      fieldOverlay.classList.remove("hidden");
+      fieldOverlay.classList.add("visible");
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (trials.length === 0) {
+        alert("まだトレーニング履歴がありません。");
+        return;
+      }
+      downloadCSV();
+    });
+
+    // フィールドクリック（回答フェーズ）
+    field.addEventListener("click", (e) => {
+      if (state !== "answer") return;
+      const rect = field.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const radius = rect.width / 2;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const dx = x - cx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy > radius * radius) {
+        statusEl.textContent = "円の内側をクリックしてください。";
+        return;
+      }
+
+      addGuessDot(x, y);
+      guesses.push({ x, y });
+
+      statusEl.innerHTML = `回答中：<strong>${guesses.length}</strong> / ${targets.length} クリック`;
+
+      if (guesses.length >= targets.length) {
+        finishTrial();
+      }
+    });
+
+    function resetField() {
+      targets = [];
+      guesses = [];
+      field.querySelectorAll(".dot-target, .dot-guess").forEach(el => el.remove());
+    }
+
+    function startTrial() {
+      resetField();
+      state = "show";
+      fieldOverlay.classList.remove("visible");
+      fieldOverlay.classList.add("hidden");
+
+      const targetCount = parseInt(targetCountInput.value, 10);
+      const displayTime = parseInt(displayTimeInput.value, 10);
+
+      const rect = field.getBoundingClientRect();
+      const radius = rect.width / 2;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+
+      // ターゲット生成（円内に均等に散らす）
+      for (let i = 0; i < targetCount; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * (radius * 0.85);
+        const x = cx + r * Math.cos(theta);
+        const y = cy + r * Math.sin(theta);
+        targets.push({ x, y });
+        addTargetDot(x, y);
+      }
+
+      hintEl.textContent = `表示中：${displayTime}ms 後にドットが消えます。`;
+      statusEl.textContent = "青いドットの位置をできるだけ正確に覚えてください。";
+
+      setTimeout(() => {
+        field.querySelectorAll(".dot-target").forEach(el => {
+          el.style.opacity = "0";
+        });
+        state = "answer";
+        hintEl.textContent = `回答フェーズ：ドットの位置を ${targets.length} 箇所クリックしてください。`;
+        statusEl.innerHTML = `回答中：<strong>0</strong> / ${targets.length} クリック`;
+      }, displayTime);
+    }
+
+    function addTargetDot(x, y) {
+      const dot = document.createElement("div");
+      dot.className = "dot-target";
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      field.appendChild(dot);
+    }
+
+    function addGuessDot(x, y) {
+      const dot = document.createElement("div");
+      dot.className = "dot-guess";
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      field.appendChild(dot);
+    }
+
+    function finishTrial() {
+      state = "idle";
+      hintEl.textContent = "トライ完了。結果を集計しました。";
+      statusEl.textContent = "結果は右側のスコアカードと履歴を確認してください。";
+
+      field.querySelectorAll(".dot-target").forEach(el => {
+        el.style.opacity = "1";
+      });
+
+      const threshold = parseInt(thresholdInput.value, 10);
+      const { avgError, hitRate } = evaluateTrial(targets, guesses, threshold);
+
+      avgErrorEl.textContent = avgError.toFixed(1);
+      hitRateEl.textContent = hitRate.toFixed(1);
+
+      const trial = {
+        id: trialIdCounter++,
+        time: new Date(),
+        targetCount: targets.length,
+        displayTime: parseInt(displayTimeInput.value, 10),
+        threshold,
+        avgError,
+        hitRate
+      };
+      trials.push(trial);
+
+      updateGlobalStats();
+      appendHistoryItem(trial);
+
+      // ★ Vision Lab 共通ログ保存
+      saveVisionLabLog("flash360", {
+        avgErrorPx: avgError,
+        hitRatePercent: hitRate,
+        targetCount: targets.length
+      });
+
+      // ★ ミニグラフ更新
+      updateFlashChart();
+    }
+
+    function evaluateTrial(targets, guesses, threshold) {
+      if (targets.length === 0 || guesses.length === 0) {
+        return { avgError: NaN, hitRate: 0 };
+      }
+
+      const usedGuessIndices = new Set();
+      const distances = [];
+
+      targets.forEach(target => {
+        let bestIdx = -1;
+        let bestDist = Infinity;
+        guesses.forEach((guess, idx) => {
+          if (usedGuessIndices.has(idx)) return;
+          const d = distance(target, guess);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = idx;
+          }
+        });
+        if (bestIdx !== -1) {
+          usedGuessIndices.add(bestIdx);
+          distances.push(bestDist);
+        }
+      });
+
+      const sum = distances.reduce((a, b) => a + b, 0);
+      const avgError = distances.length ? sum / distances.length : NaN;
+      const hits = distances.filter(d => d <= threshold).length;
+      const hitRate = distances.length ? (hits / distances.length) * 100 : 0;
+
+      return { avgError, hitRate };
+    }
+
+    function distance(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function updateGlobalStats() {
+      const count = trials.length;
+      sessionCountEl.textContent = count;
+      if (!count) {
+        globalAvgErrorEl.textContent = "-";
+        return;
+      }
+      const sum = trials.reduce((acc, t) => acc + t.avgError, 0);
+      const avg = sum / count;
+      globalAvgErrorEl.textContent = avg.toFixed(1);
+    }
+
+    function appendHistoryItem(trial) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="history-metric">
+          #${trial.id} 誤差 ${trial.avgError.toFixed(1)}px / 命中率 ${trial.hitRate.toFixed(1)}%
+        </div>
+        <div class="history-meta">
+          ${formatTime(trial.time)}｜${trial.targetCount}個｜表示${trial.displayTime}ms｜閾値${trial.threshold}px
+        </div>
+      `;
+
+      item.appendChild(left);
+      historyListEl.prepend(item);
+    }
+
+    function formatTime(date) {
+      const d = (date instanceof Date) ? date : new Date(date);
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      const s = String(d.getSeconds()).padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    }
+
+    function downloadCSV() {
+      const header = [
+        "trial_id",
+        "datetime",
+        "target_count",
+        "display_time_ms",
+        "threshold_px",
+        "avg_error_px",
+        "hit_rate_percent"
+      ];
+
+      const rows = trials.map(t => {
+        const dt = t.time.toISOString();
+        return [
+          t.id,
+          dt,
+          t.targetCount,
+          t.displayTime,
+          t.threshold,
+          t.avgError.toFixed(3),
+          t.hitRate.toFixed(3)
+        ];
+      });
+
+      const csv = [header.join(","), ...rows.map(r => r.join(","))].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      a.download = `vision_360_log_${timestamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /* ▼ flash360 用ログ読み込み＆チャート ▼ */
+    function loadFlashLogs() {
+      try {
+        const raw = localStorage.getItem("visionLabLogs");
+        if (!raw) return [];
+        const all = JSON.parse(raw);
+        if (!Array.isArray(all)) return [];
+        return all.filter(log =>
+          log.tool === "flash360" &&
+          typeof log.avgErrorPx === "number"
+        );
+      } catch (e) {
+        console.warn("read logs failed:", e);
+        return [];
+      }
+    }
+
+    let flashChartInstance = null;
+
+    function updateFlashChart() {
+      const logs = loadFlashLogs();
+      if (!logs.length) {
+        if (flashChartInstance) {
+          flashChartInstance.destroy();
+          flashChartInstance = null;
+        }
+        return;
+      }
+
+      logs.sort((a, b) => new Date(a.time) - new Date(b.time));
+      const recent = logs.slice(-10);
+
+      const labels = recent.map((log, idx) => {
+        const d = new Date(log.time);
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${m}/${day} #${idx + 1}`;
+      });
+
+      const values = recent.map(log => log.avgErrorPx);
+
+      const canvas = document.getElementById("flashChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      if (flashChartInstance) {
+        flashChartInstance.destroy();
+      }
+
+      flashChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "平均誤差(px)",
+            data: values,
+            backgroundColor: "rgba(96,165,250,0.85)"
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.parsed.y.toFixed(1)} px`
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "#9ca3af",
+                font: { size: 10 }
+              },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: "#9ca3af",
+                font: { size: 10 }
+              },
+              grid: {
+                color: "rgba(148,163,184,0.25)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    window.addEventListener("load", () => {
+      updateFlashChart();
+    });
+  </script>
+</body>
+</html>

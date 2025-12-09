@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>動き予測トレーニング - Vision Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- フォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Chart.js（このページ専用のグラフ用） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root {
+      --bg: #05070a;
+      --bg-alt: #070b12;
+      --accent: #00b0ff;
+      --accent-soft: rgba(0, 176, 255, 0.25);
+      --danger: #ff3b6b;
+      --text: #e5f6ff;
+      --muted: #7f8ea3;
+      --border: #1b2333;
+      --card-radius: 18px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0b1220 0, #020308 45%, #000 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1150px;
+      background: linear-gradient(135deg, rgba(0,176,255,0.12), rgba(0,0,0,0.8));
+      border-radius: 26px;
+      border: 1px solid rgba(0,176,255,0.25);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 22px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% -10%, rgba(0,176,255,0.18), transparent 55%),
+        radial-gradient(circle at 80% 120%, rgba(0,176,255,0.12), transparent 55%);
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: baseline;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(0,176,255,0.22);
+      padding-bottom: 10px;
+    }
+
+    .title-main {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-main span.badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      background: rgba(0,0,0,0.55);
+      color: var(--accent);
+      text-transform: none;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 460px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(0,176,255,0.12), rgba(3,7,18,0.96));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,0.02);
+      pointer-events: none;
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ヘッダー右上のナビボタン */
+    .header-nav {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15,23,42,0.9);
+      color: var(--muted);
+      text-decoration: none;
+      transition: background 0.12s ease-out, color 0.12s ease-out, border-color 0.12s ease-out, transform 0.08s ease-out;
+    }
+
+    .nav-btn:hover {
+      background: rgba(30,41,59,0.95);
+      color: var(--text);
+      border-color: rgba(148,163,184,0.9);
+      transform: translateY(-0.5px);
+    }
+
+    .nav-btn.primary {
+      border: none;
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 6px 14px rgba(0,132,255,0.6);
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 9px 20px rgba(0,132,255,0.75);
+    }
+
+    .badge-mini {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,176,255,0.38);
+      color: var(--accent);
+      background: rgba(0,0,0,0.7);
+    }
+
+    /* フィールド */
+    .field-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 520px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 2px solid rgba(0,176,255,0.7);
+      box-shadow:
+        0 0 25px rgba(0,176,255,0.38),
+        inset 0 0 25px rgba(0,176,255,0.18);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(0,176,255,0.16), transparent 55%),
+        radial-gradient(circle at 30% 80%, rgba(0,176,255,0.12), transparent 60%),
+        radial-gradient(circle at 50% 50%, #020617, #000);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    .hint-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .dot-moving,
+    .dot-guess,
+    .dot-target {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .dot-moving {
+      background: radial-gradient(circle at 30% 30%, #e0f7ff, var(--accent));
+      box-shadow: 0 0 12px rgba(0,176,255,0.9);
+    }
+
+    .dot-guess {
+      background: radial-gradient(circle at 30% 30%, #fff3e0, #ffc400);
+      box-shadow: 0 0 10px rgba(255,196,0,0.9);
+    }
+
+    .dot-target {
+      background: radial-gradient(circle at 30% 30%, #fee2e2, #ef4444);
+      box-shadow: 0 0 12px rgba(239,68,68,0.9);
+      opacity: 0.8;
+    }
+
+    .field-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+      background: radial-gradient(circle at center, rgba(10,14,26,0.9), rgba(2,6,23,0.94));
+      backdrop-filter: blur(6px);
+      border-radius: 50%;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .field-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+    }
+
+    .field-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.18s ease-out;
+    }
+
+    /* コントロール */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .control-label span.value {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out, opacity 0.12s ease-out;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 8px 18px rgba(0,132,255,0.55);
+    }
+
+    button.primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(0,132,255,0.7);
+    }
+
+    button.ghost {
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.7);
+      color: var(--muted);
+    }
+
+    button.ghost:hover:not(:disabled) {
+      background: rgba(30,41,59,0.9);
+      color: var(--text);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+
+    .status-text strong { color: var(--accent); }
+
+    /* スコアカード */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .stat-chip {
+      border-radius: 12px;
+      border: 1px solid rgba(30,64,175,0.75);
+      background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(8,47,73,0.9));
+      padding: 6px 8px;
+      font-size: 0.76rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e0f2fe;
+    }
+
+    /* 履歴 */
+    .history {
+      margin-top: 10px;
+      border-top: 1px dashed rgba(148,163,184,0.35);
+      padding-top: 8px;
+    }
+
+    .history-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .history-title-row h3 {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .history-list {
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 4px;
+      font-size: 0.75rem;
+    }
+
+    .history-item {
+      padding: 3px 0;
+      border-bottom: 1px dotted rgba(30,64,175,0.5);
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-metric { color: #e0f2fe; }
+
+    .history-meta {
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,0.5);
+      border-radius: 999px;
+    }
+
+    /* ミニグラフ用 */
+    .chart-block {
+      margin-top: 10px;
+      border-top: 1px dashed rgba(148,163,184,0.35);
+      padding-top: 8px;
+    }
+
+    .chart-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .chart-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 170px !important;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-main">
+        Vision Lab: 動き予測
+        <span class="badge">BLUE-LOCK STYLE</span>
+
+        <div class="header-nav">
+          <button class="nav-btn" onclick="history.back()">← 戻る</button>
+          <a href="index.html" class="nav-btn primary">Home</a>
+        </div>
+      </div>
+      <div class="subtitle">
+        ボールの軌道が途中で消えたあと、「数秒後の位置」を予測するトレーニング。
+        直線・カーブ・ジグザグの動きを読み切る力を鍛えます。
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- 左：フィールド -->
+      <section class="card">
+        <h2>
+          フィールド
+          <span class="badge-mini">Trajectory Prediction</span>
+        </h2>
+        <div class="field-wrapper">
+          <div id="field" class="field">
+            <div id="fieldOverlay" class="field-overlay visible">
+              <div>
+                <div style="font-size:0.95rem; margin-bottom:4px;">「トライ開始」を押してスタート</div>
+                <div style="font-size:0.8rem; color:#9ca3af;">
+                  ボール（青いドット）が直線／カーブ／ジグザグに動きます。<br/>
+                  途中で見えなくなったあと、<strong>数秒後の位置</strong>を予測してクリックしてください。
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="hint" class="hint-text"></div>
+        </div>
+      </section>
+
+      <!-- 右：コントロール＆スコア -->
+      <section class="card">
+        <h2>
+          トレーニング設定 ＆ スコア
+          <span class="badge-mini">Session Control</span>
+        </h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <div class="control-label">
+              <span>軌道タイプ</span>
+              <span class="value"><span id="trajectoryLabel">直線 / カーブ / ジグザグ</span></span>
+            </div>
+            <select id="trajectoryType">
+              <option value="random">ランダム（直線/カーブ/ジグザグ）</option>
+              <option value="linear">直線</option>
+              <option value="curve">カーブ</option>
+              <option value="zigzag">ジグザグ</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>全体の移動時間</span>
+              <span class="value"><span id="totalTimeValue">2000</span> ms</span>
+            </div>
+            <input id="totalTimeInput" type="range" min="1200" max="3200" step="200" value="2000">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>途中まで見える割合</span>
+              <span class="value"><span id="visibleRatioValue">50</span> %</span>
+            </div>
+            <input id="visibleRatioInput" type="range" min="30" max="80" step="5" value="50">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>予測する時間先</span>
+              <span class="value"><span id="futureTimeValue">800</span> ms</span>
+            </div>
+            <input id="futureTimeInput" type="range" min="300" max="2000" step="100" value="800">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>軌道の長さ（難易度）</span>
+              <span class="value"><span id="distanceFactorValue">75</span> %</span>
+            </div>
+            <input id="distanceFactorInput" type="range" min="40" max="90" step="5" value="75">
+          </div>
+
+          <div class="button-row">
+            <button id="startBtn" class="primary">▶ トライ開始</button>
+            <button id="resetBtn" class="ghost">リセット</button>
+            <button id="downloadBtn" class="ghost">CSVダウンロード</button>
+          </div>
+
+          <div id="status" class="status-text"></div>
+
+          <div class="stats-grid">
+            <div class="stat-chip">
+              <div class="stat-label">今回の誤差</div>
+              <div class="stat-value"><span id="lastError">-</span> px</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">全体平均誤差</div>
+              <div class="stat-value"><span id="globalAvgError">-</span> px</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">トライ回数</div>
+              <div class="stat-value"><span id="trialCount">0</span> 回</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">今回の軌道タイプ</div>
+              <div class="stat-value"><span id="currentTypeChip">-</span></div>
+            </div>
+          </div>
+
+          <div class="history">
+            <div class="history-title-row">
+              <h3>トレーニング履歴</h3>
+            </div>
+            <div id="historyList" class="history-list scrollbar-thin">
+              <!-- 履歴 -->
+            </div>
+          </div>
+
+          <!-- このトレーニング専用のミニグラフ -->
+          <div class="chart-block">
+            <div class="chart-title">予測誤差グラフ（直近10セッション）</div>
+            <div class="chart-sub">px が低いほど良い読みです（棒が低いほど◎）。</div>
+            <canvas id="predictChart"></canvas>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /* ▼ 共有ログ保存関数（他のツールも共通で使える） ▼ */
+    function saveVisionLabLog(tool, payload) {
+      try {
+        const key = "visionLabLogs";
+        const logs = JSON.parse(localStorage.getItem(key) || "[]");
+        logs.push({
+          tool,                     // "flash360" / "predict" / "nolook" / "scan"
+          time: new Date().toISOString(),
+          ...payload                // スコアなど
+        });
+        localStorage.setItem(key, JSON.stringify(logs));
+      } catch (e) {
+        console.warn("Vision Lab log save failed:", e);
+      }
+    }
+
+    /* ▼ DOM 取得 ▼ */
+    const field = document.getElementById("field");
+    const fieldOverlay = document.getElementById("fieldOverlay");
+    const hintEl = document.getElementById("hint");
+    const statusEl = document.getElementById("status");
+
+    const trajectoryTypeSelect = document.getElementById("trajectoryType");
+    const trajectoryLabel = document.getElementById("trajectoryLabel");
+
+    const totalTimeInput = document.getElementById("totalTimeInput");
+    const totalTimeValue = document.getElementById("totalTimeValue");
+    const visibleRatioInput = document.getElementById("visibleRatioInput");
+    const visibleRatioValue = document.getElementById("visibleRatioValue");
+    const futureTimeInput = document.getElementById("futureTimeInput");
+    const futureTimeValue = document.getElementById("futureTimeValue");
+    const distanceFactorInput = document.getElementById("distanceFactorInput");
+    const distanceFactorValue = document.getElementById("distanceFactorValue");
+
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const lastErrorEl = document.getElementById("lastError");
+    const globalAvgErrorEl = document.getElementById("globalAvgError");
+    const trialCountEl = document.getElementById("trialCount");
+    const currentTypeChip = document.getElementById("currentTypeChip");
+    const historyListEl = document.getElementById("historyList");
+
+    /* ▼ 状態管理 ▼ */
+    let state = "idle"; // "idle" | "animating" | "answer"
+    let movingDot = null;
+    let guessDot = null;
+    let targetDot = null;
+
+    let trajectory = null; // { type, getPos(t) }
+    let animStartTime = null;
+    let animationFrameId = null;
+
+    let totalDuration = 0;
+    let visibleDuration = 0;
+    let futureOffset = 0;
+    let targetParam = 0;
+
+    let answered = false;
+
+    let trials = [];
+    let trialIdCounter = 1;
+
+    /* ▼ スライダーの表示反映 ▼ */
+    totalTimeInput.addEventListener("input", () => {
+      totalTimeValue.textContent = totalTimeInput.value;
+    });
+    visibleRatioInput.addEventListener("input", () => {
+      visibleRatioValue.textContent = visibleRatioInput.value;
+    });
+    futureTimeInput.addEventListener("input", () => {
+      futureTimeValue.textContent = futureTimeInput.value;
+    });
+    distanceFactorInput.addEventListener("input", () => {
+      distanceFactorValue.textContent = distanceFactorInput.value;
+    });
+
+    trajectoryTypeSelect.addEventListener("change", () => {
+      const val = trajectoryTypeSelect.value;
+      if (val === "random") {
+        trajectoryLabel.textContent = "直線 / カーブ / ジグザグ";
+      } else if (val === "linear") {
+        trajectoryLabel.textContent = "直線のみ";
+      } else if (val === "curve") {
+        trajectoryLabel.textContent = "カーブのみ";
+      } else if (val === "zigzag") {
+        trajectoryLabel.textContent = "ジグザグのみ";
+      }
+    });
+
+    /* ▼ ボタン ▼ */
+    startBtn.addEventListener("click", () => {
+      if (state !== "idle") return;
+      startTrial();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      cancelAnimationFrame(animationFrameId);
+      resetField();
+      state = "idle";
+      hintEl.textContent = "";
+      statusEl.textContent = "フィールドをリセットしました。";
+      fieldOverlay.classList.remove("hidden");
+      fieldOverlay.classList.add("visible");
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (trials.length === 0) {
+        alert("まだトレーニング履歴がありません。");
+        return;
+      }
+      downloadCSV();
+    });
+
+    /* ▼ フィールドクリック（回答） ▼ */
+    field.addEventListener("click", (e) => {
+      if (state !== "answer" || answered) return;
+
+      const rect = field.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const radius = rect.width / 2;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const dx = x - cx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy > radius * radius) {
+        statusEl.textContent = "円の内側をクリックしてください。";
+        return;
+      }
+
+      if (guessDot) guessDot.remove();
+      guessDot = document.createElement("div");
+      guessDot.className = "dot-guess";
+      guessDot.style.left = `${x}px`;
+      guessDot.style.top = `${y}px`;
+      field.appendChild(guessDot);
+
+      answered = true;
+      finishTrial({ x, y });
+    });
+
+    function resetField() {
+      if (movingDot) {
+        movingDot.remove();
+        movingDot = null;
+      }
+      if (guessDot) {
+        guessDot.remove();
+        guessDot = null;
+      }
+      if (targetDot) {
+        targetDot.remove();
+        targetDot = null;
+      }
+      trajectory = null;
+      answered = false;
+      targetParam = 0;
+    }
+
+    function startTrial() {
+      resetField();
+      state = "animating";
+      fieldOverlay.classList.remove("visible");
+      fieldOverlay.classList.add("hidden");
+
+      totalDuration = parseInt(totalTimeInput.value, 10);
+      const visibleRatio = parseInt(visibleRatioInput.value, 10) / 100;
+      visibleDuration = totalDuration * visibleRatio;
+      futureOffset = parseInt(futureTimeInput.value, 10);
+
+      // 「見えていた時点」から futureOffset ms 先の位置を予測対象にする
+      const targetTime = Math.min(visibleDuration + futureOffset, totalDuration);
+      targetParam = targetTime / totalDuration;
+
+      const rect = field.getBoundingClientRect();
+      const radius = rect.width / 2;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const distanceFactor = parseInt(distanceFactorInput.value, 10) / 100;
+
+      trajectory = createTrajectory(rect, cx, cy, radius, distanceFactor);
+      currentTypeChip.textContent = labelForType(trajectory.type);
+
+      movingDot = document.createElement("div");
+      movingDot.className = "dot-moving";
+      field.appendChild(movingDot);
+
+      animStartTime = performance.now();
+      answered = false;
+
+      statusEl.textContent = "ボールの動きを目で追ってください。途中で見えなくなります。";
+      hintEl.textContent = "";
+
+      animationFrameId = requestAnimationFrame(stepAnimation);
+    }
+
+    function stepAnimation(now) {
+      if (state !== "animating" || !trajectory || !movingDot) return;
+
+      const elapsed = now - animStartTime;
+      const t = Math.min(elapsed / totalDuration, 1);
+      const pos = trajectory.getPos(t);
+      movingDot.style.left = `${pos.x}px`;
+      movingDot.style.top = `${pos.y}px`;
+
+      if (elapsed < visibleDuration) {
+        // まだ表示フェーズ
+        animationFrameId = requestAnimationFrame(stepAnimation);
+      } else if (elapsed < totalDuration) {
+        // 非表示フェーズ（予測タイム）
+        movingDot.style.opacity = "0";
+        if (state === "animating") {
+          state = "answer";
+          statusEl.textContent = "今見えなくなった位置から、指定時間後のボール位置を予測してクリックしてください。";
+          const futureSec = (futureOffset / 1000).toFixed(1);
+          hintEl.textContent = `さっきまで見えていた地点から、約 ${futureSec} 秒後の位置をイメージしてクリックします。`;
+        }
+        animationFrameId = requestAnimationFrame(stepAnimation);
+      } else {
+        // 全アニメーション終了
+        if (state === "animating") {
+          state = "answer";
+          movingDot.style.opacity = "0";
+          statusEl.textContent = "ボールの軌道はここで終了しました。数秒後の位置をイメージしてクリックしてください。";
+        }
+      }
+    }
+
+    function createTrajectory(rect, cx, cy, radius, distanceFactor) {
+      // 基本となる直線の始点・終点
+      const angle = Math.random() * Math.PI * 2;
+      const maxLen = radius * distanceFactor;
+      const halfLen = maxLen / 2;
+      const dirX = Math.cos(angle);
+      const dirY = Math.sin(angle);
+
+      let start = { x: cx - dirX * halfLen, y: cy - dirY * halfLen };
+      let end = { x: cx + dirX * halfLen, y: cy + dirY * halfLen };
+
+      // 円の内側に収まるよう微調整
+      [start, end] = [start, end].map(pos => {
+        const dx = pos.x - cx;
+        const dy = pos.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > radius * 0.85) {
+          const scale = (radius * 0.85) / dist;
+          return { x: cx + dx * scale, y: cy + dy * scale };
+        }
+        return pos;
+      });
+
+      let type = trajectoryTypeSelect.value;
+      if (type === "random") {
+        const options = ["linear", "curve", "zigzag"];
+        type = options[Math.floor(Math.random() * options.length)];
+      }
+
+      if (type === "linear") {
+        return {
+          type,
+          getPos(t) {
+            return {
+              x: lerp(start.x, end.x, t),
+              y: lerp(start.y, end.y, t)
+            };
+          }
+        };
+      }
+
+      if (type === "curve") {
+        // 中間点を基準に直線に対して垂直方向にオフセット
+        const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+        const vx = end.x - start.x;
+        const vy = end.y - start.y;
+        const dist = Math.sqrt(vx * vx + vy * vy);
+        let nx = -vy / dist;
+        let ny = vx / dist;
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const amp = dist * (0.3 + Math.random() * 0.3); // カーブの強さ
+        const ctrl = {
+          x: mid.x + nx * amp * dir,
+          y: mid.y + ny * amp * dir
+        };
+
+        return {
+          type,
+          getPos(t) {
+            const u = 1 - t;
+            const x =
+              u * u * start.x +
+              2 * u * t * ctrl.x +
+              t * t * end.x;
+            const y =
+              u * u * start.y +
+              2 * u * t * ctrl.y +
+              t * t * end.y;
+            return { x, y };
+          }
+        };
+      }
+
+      if (type === "zigzag") {
+        // 3〜4セグメントのジグザグ
+        const segments = 3 + Math.floor(Math.random() * 2); // 3 or 4
+        const points = [start];
+        const vx = (end.x - start.x) / segments;
+        const vy = (end.y - start.y) / segments;
+
+        const baseSegLen = Math.sqrt(vx * vx + vy * vy);
+        const amp = baseSegLen * (0.5 + Math.random() * 0.5);
+
+        for (let i = 1; i < segments; i++) {
+          const baseX = start.x + vx * i;
+          const baseY = start.y + vy * i;
+
+          // 直線に垂直な方向
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          let nx = -dy / len;
+          let ny = dx / len;
+
+          const dir = i % 2 === 0 ? 1 : -1;
+          points.push({
+            x: baseX + nx * amp * dir,
+            y: baseY + ny * amp * dir
+          });
+        }
+        points.push(end);
+
+        return {
+          type,
+          getPos(t) {
+            const totalSeg = points.length - 1;
+            const segT = t * totalSeg;
+            const idx = Math.min(Math.floor(segT), totalSeg - 1);
+            const localT = segT - idx;
+            const p0 = points[idx];
+            const p1 = points[idx + 1];
+            return {
+              x: lerp(p0.x, p1.x, localT),
+              y: lerp(p0.y, p1.y, localT)
+            };
+          }
+        };
+      }
+
+      // フォールバック：直線
+      return {
+        type: "linear",
+        getPos(t) {
+          return {
+            x: lerp(start.x, end.x, t),
+            y: lerp(start.y, end.y, t)
+          };
+        }
+      };
+    }
+
+    function labelForType(type) {
+      if (type === "linear") return "直線";
+      if (type === "curve") return "カーブ";
+      if (type === "zigzag") return "ジグザグ";
+      return type;
+    }
+
+    function finishTrial(guessPos) {
+      state = "idle";
+
+      // 予測すべき「数秒後の位置」（ターゲット）
+      const targetPos = trajectory.getPos(targetParam);
+
+      targetDot = document.createElement("div");
+      targetDot.className = "dot-target";
+      targetDot.style.left = `${targetPos.x}px`;
+      targetDot.style.top = `${targetPos.y}px`;
+      field.appendChild(targetDot);
+
+      const err = distance(guessPos, targetPos);
+      lastErrorEl.textContent = err.toFixed(1);
+
+      const futureSec = (futureOffset / 1000).toFixed(1);
+      statusEl.textContent = `トライ完了：予測すべきタイミング（約 ${futureSec} 秒後）での誤差は ${err.toFixed(1)} px でした。`;
+      hintEl.textContent = "黄色：あなたの予測 / 赤：指定タイミングでの実際の位置（想定）";
+
+      const trial = {
+        id: trialIdCounter++,
+        time: new Date(),
+        type: trajectory.type,
+        totalDuration,
+        visibleDuration,
+        visibleRatio: visibleDuration / totalDuration,
+        futureOffset,
+        targetParam,
+        distanceFactor: parseInt(distanceFactorInput.value, 10) / 100,
+        error: err
+      };
+      trials.push(trial);
+
+      updateGlobalStats();
+      appendHistoryItem(trial);
+
+      // ★ Vision Lab 共通ログに保存（誤差をそのままスコアとして入れておく）
+      saveVisionLabLog("predict", {
+        errorPx: err,
+        totalDurationMs: totalDuration,
+        futureOffsetMs: futureOffset,
+        trajectoryType: trajectory.type
+      });
+
+      // ★ グラフも更新
+      updatePredictChart();
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function distance(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function updateGlobalStats() {
+      const count = trials.length;
+      trialCountEl.textContent = count;
+      if (count === 0) {
+        globalAvgErrorEl.textContent = "-";
+        return;
+      }
+      const sum = trials.reduce((acc, t) => acc + t.error, 0);
+      const avg = sum / count;
+      globalAvgErrorEl.textContent = avg.toFixed(1);
+    }
+
+    function appendHistoryItem(trial) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+
+      const typeLabel = labelForType(trial.type);
+      const futureSec = (trial.futureOffset / 1000).toFixed(1);
+
+      item.innerHTML = `
+        <div class="history-metric">
+          #${trial.id} 誤差 ${trial.error.toFixed(1)}px｜${typeLabel}
+        </div>
+        <div class="history-meta">
+          ${formatTime(trial.time)}
+          ｜可視 ${Math.round(trial.visibleRatio * 100)}%
+          ｜予測 +${futureSec}s
+          ｜移動 ${trial.totalDuration}ms
+        </div>
+      `;
+
+      historyListEl.prepend(item);
+    }
+
+    function formatTime(date) {
+      const d = (date instanceof Date) ? date : new Date(date);
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      const s = String(d.getSeconds()).padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    }
+
+    function downloadCSV() {
+      const header = [
+        "trial_id",
+        "datetime",
+        "trajectory_type",
+        "total_duration_ms",
+        "visible_duration_ms",
+        "visible_ratio",
+        "future_offset_ms",
+        "target_param",
+        "distance_factor",
+        "error_px"
+      ];
+
+      const rows = trials.map(t => {
+        const dt = t.time.toISOString();
+        return [
+          t.id,
+          dt,
+          t.type,
+          t.totalDuration,
+          Math.round(t.visibleDuration),
+          t.visibleRatio.toFixed(3),
+          t.futureOffset,
+          t.targetParam.toFixed(3),
+          t.distanceFactor.toFixed(3),
+          t.error.toFixed(3)
+        ];
+      });
+
+      const csv = [header.join(","), ...rows.map(r => r.join(","))].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vision_predict_curve_zigzag_${timestamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /* ▼ このトレーニング専用のログ読込＋グラフ処理 ▼ */
+
+    function loadPredictLogs() {
+      try {
+        const raw = localStorage.getItem("visionLabLogs");
+        if (!raw) return [];
+        const all = JSON.parse(raw);
+        if (!Array.isArray(all)) return [];
+        return all.filter(log => log.tool === "predict" && typeof log.errorPx === "number");
+      } catch (e) {
+        console.warn("read logs failed:", e);
+        return [];
+      }
+    }
+
+    let predictChartInstance = null;
+
+    function updatePredictChart() {
+      const logs = loadPredictLogs();
+      if (!logs.length) {
+        if (predictChartInstance) {
+          predictChartInstance.destroy();
+          predictChartInstance = null;
+        }
+        return;
+      }
+
+      // 時間順にソート
+      logs.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      // 直近10件だけ
+      const recent = logs.slice(-10);
+
+      const labels = recent.map((log, idx) => {
+        const d = new Date(log.time);
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${m}/${day} #${idx + 1}`;
+      });
+
+      const errors = recent.map(log => log.errorPx);
+
+      const canvas = document.getElementById("predictChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      if (predictChartInstance) {
+        predictChartInstance.destroy();
+      }
+
+      predictChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "予測誤差(px)",
+            data: errors,
+            backgroundColor: "rgba(96,165,250,0.8)"
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.parsed.y.toFixed(1)} px`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "#9ca3af",
+                font: { size: 10 }
+              },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: "#9ca3af",
+                font: { size: 10 }
+              },
+              grid: {
+                color: "rgba(148,163,184,0.25)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* ▼ ページ読み込み時に、過去ログからグラフ初期表示 ▼ */
+    window.addEventListener("load", () => {
+      updatePredictChart();
+    });
+  </script>
+</body>
+</html>

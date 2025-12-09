@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>スキャン頻度トレーニング - Vision Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- フォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #05070a;
+      --accent: #00b0ff;
+      --accent-soft: rgba(0, 176, 255, 0.25);
+      --text: #e5f6ff;
+      --muted: #7f8ea3;
+      --border: #1b2333;
+      --card-radius: 18px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0b1220 0, #020308 45%, #000 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1150px;
+      background: linear-gradient(135deg, rgba(0,176,255,0.12), rgba(0,0,0,0.8));
+      border-radius: 26px;
+      border: 1px solid rgba(0,176,255,0.25);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 22px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% -10%, rgba(0,176,255,0.18), transparent 55%),
+        radial-gradient(circle at 80% 120%, rgba(0,176,255,0.12), transparent 55%);
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: baseline;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(0,176,255,0.22);
+      padding-bottom: 10px;
+    }
+
+    .title-main {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-main span.badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      background: rgba(0,0,0,0.55);
+      color: var(--accent);
+      text-transform: none;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 460px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(0,176,255,0.12), rgba(3,7,18,0.96));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,0.02);
+      pointer-events: none;
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ヘッダー右上のナビボタン */
+    .header-nav {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15,23,42,0.9);
+      color: var(--muted);
+      text-decoration: none;
+      transition: background 0.12s ease-out, color 0.12s ease-out, border-color 0.12s ease-out, transform 0.08s ease-out;
+    }
+
+    .nav-btn:hover {
+      background: rgba(30,41,59,0.95);
+      color: var(--text);
+      border-color: rgba(148,163,184,0.9);
+      transform: translateY(-0.5px);
+    }
+
+    .nav-btn.primary {
+      border: none;
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 6px 14px rgba(0,132,255,0.6);
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 9px 20px rgba(0,132,255,0.75);
+    }
+
+    .badge-mini {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,176,255,0.38);
+      color: var(--accent);
+      background: rgba(0,0,0,0.7);
+    }
+
+    /* フィールド */
+    .field-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 520px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 2px solid rgba(0,176,255,0.7);
+      box-shadow:
+        0 0 25px rgba(0,176,255,0.38),
+        inset 0 0 25px rgba(0,176,255,0.18);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(0,176,255,0.16), transparent 55%),
+        radial-gradient(circle at 30% 80%, rgba(0,176,255,0.12), transparent 60%),
+        radial-gradient(circle at 50% 50%, #020617, #000);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    .hint-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .fixation {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 26px;
+      height: 26px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e5f6ff;
+      font-size: 0.9rem;
+      text-shadow: 0 0 8px rgba(0,176,255,0.9);
+      opacity: 0.6;
+    }
+
+    .fixation::before,
+    .fixation::after {
+      content: "";
+      position: absolute;
+      background: rgba(148,163,184,0.7);
+    }
+
+    .fixation::before {
+      width: 1px;
+      height: 22px;
+    }
+
+    .fixation::after {
+      width: 22px;
+      height: 1px;
+    }
+
+    .fixation span {
+      position: relative;
+      z-index: 1;
+      font-size: 0.7rem;
+      color: #a5f3fc;
+    }
+
+    .dot-target {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      background: radial-gradient(circle at 30% 30%, #e0f7ff, var(--accent));
+      box-shadow: 0 0 12px rgba(0,176,255,0.9);
+    }
+
+    .field-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+      background: radial-gradient(circle at center, rgba(10,14,26,0.9), rgba(2,6,23,0.94));
+      backdrop-filter: blur(6px);
+      border-radius: 50%;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .field-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+    }
+    .field-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.18s ease-out;
+    }
+
+    /* コントロール */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .control-label span.value {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out, opacity 0.12s ease-out;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      background: radial-gradient(circle at 30% 0, #5fd4ff, #0084ff);
+      color: #020617;
+      box-shadow: 0 8px 18px rgba(0,132,255,0.55);
+    }
+
+    button.primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(0,132,255,0.7);
+    }
+
+    button.ghost {
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.7);
+      color: var(--muted);
+    }
+
+    button.ghost:hover:not(:disabled) {
+      background: rgba(30,41,59,0.9);
+      color: var(--text);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+
+    .status-text strong { color: var(--accent); }
+
+    /* スコアカード */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .stat-chip {
+      border-radius: 12px;
+      border: 1px solid rgba(30,64,175,0.75);
+      background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(8,47,73,0.9));
+      padding: 6px 8px;
+      font-size: 0.76rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e0f2fe;
+    }
+
+    /* 履歴 */
+    .history {
+      margin-top: 10px;
+      border-top: 1px dashed rgba(148,163,184,0.35);
+      padding-top: 8px;
+    }
+
+    .history-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .history-title-row h3 {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .history-list {
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 4px;
+      font-size: 0.75rem;
+    }
+
+    .history-item {
+      padding: 3px 0;
+      border-bottom: 1px dotted rgba(30,64,175,0.5);
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-metric { color: #e0f2fe; }
+
+    .history-meta {
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,0.5);
+      border-radius: 999px;
+    }
+
+    /* ミニグラフ */
+    .chart-block {
+      margin-top: 10px;
+      border-top: 1px dashed rgba(148,163,184,0.35);
+      padding-top: 8px;
+    }
+
+    .chart-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .chart-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 170px !important;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-main">
+        Vision Lab: スキャン頻度
+        <span class="badge">BLUE-LOCK STYLE</span>
+
+        <div class="header-nav">
+          <button class="nav-btn" onclick="history.back()">← 戻る</button>
+          <a href="index.html" class="nav-btn primary">Home</a>
+        </div>
+      </div>
+      <div class="subtitle">
+        首や視線をこまめにスキャンする感覚を、反応速度と「回数/分」で可視化するトレーニング。<br/>
+        青いターゲットを見つけたら、ためらわず即クリック！
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- 左：フィールド -->
+      <section class="card">
+        <h2>
+          フィールド
+          <span class="badge-mini">Scan Frequency</span>
+        </h2>
+        <div class="field-wrapper">
+          <div id="field" class="field">
+            <div class="fixation">
+              <span>＋</span>
+            </div>
+            <div id="fieldOverlay" class="field-overlay visible">
+              <div>
+                <div style="font-size:0.95rem; margin-bottom:4px;">「セッション開始」を押してスタート</div>
+                <div style="font-size:0.8rem; color:#9ca3af;">
+                  円の中に1つだけ現れる青いターゲットを、できるだけ素早くクリックします。<br/>
+                  一定時間内に何回キャッチできたかが、あなたの「スキャン頻度（回数/分）」になります。
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="hint" class="hint-text"></div>
+        </div>
+      </section>
+
+      <!-- 右：コントロール＆スコア -->
+      <section class="card">
+        <h2>
+          トレーニング設定 ＆ スコア
+          <span class="badge-mini">Session Control</span>
+        </h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <div class="control-label">
+              <span>セッション時間</span>
+              <span class="value"><span id="sessionTimeValue">30</span> 秒</span>
+            </div>
+            <input id="sessionTimeInput" type="range" min="20" max="90" step="10" value="30">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>ターゲットの周辺寄り度合い</span>
+              <span class="value"><span id="peripheralValue">60</span> %</span>
+            </div>
+            <input id="peripheralInput" type="range" min="40" max="90" step="5" value="60">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>ターゲットの最小間隔（ms）</span>
+              <span class="value"><span id="minIntervalValue">150</span> ms</span>
+            </div>
+            <input id="minIntervalInput" type="range" min="0" max="400" step="50" value="150">
+          </div>
+
+          <div class="button-row">
+            <button id="startBtn" class="primary">▶ セッション開始</button>
+            <button id="stopBtn" class="ghost" disabled>■ 強制終了</button>
+            <button id="downloadBtn" class="ghost">CSVダウンロード</button>
+          </div>
+
+          <div id="status" class="status-text"></div>
+
+          <div class="stats-grid">
+            <div class="stat-chip">
+              <div class="stat-label">今回のヒット数</div>
+              <div class="stat-value"><span id="hitCount">0</span> 回</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">スキャン頻度</div>
+              <div class="stat-value"><span id="scanRate">-</span> 回/分</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">平均反応時間</div>
+              <div class="stat-value"><span id="avgReaction">-</span> ms</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">左右バランス（右割合）</div>
+              <div class="stat-value"><span id="rightRatio">-</span> %</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">上下バランス（上割合）</div>
+              <div class="stat-value"><span id="upRatio">-</span> %</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-label">セッション数</div>
+              <div class="stat-value"><span id="sessionCount">0</span> 回</div>
+            </div>
+          </div>
+
+          <div class="history">
+            <div class="history-title-row">
+              <h3>トレーニング履歴</h3>
+            </div>
+            <div id="historyList" class="history-list scrollbar-thin">
+              <!-- 履歴 -->
+            </div>
+          </div>
+
+          <!-- ミニグラフ -->
+          <div class="chart-block">
+            <div class="chart-title">スキャン頻度（直近10セッション）</div>
+            <div class="chart-sub">1分あたりのキャッチ数が、ピッチ上での「首振りの密度」に近いイメージ。</div>
+            <canvas id="scanChart"></canvas>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /* ▼ 共通ログ保存関数 ▼ */
+    function saveVisionLabLog(tool, payload) {
+      try {
+        const key = "visionLabLogs";
+        const logs = JSON.parse(localStorage.getItem(key) || "[]");
+        logs.push({
+          tool,                     // "flash360" / "predict" / "nolook" / "scan"
+          time: new Date().toISOString(),
+          ...payload
+        });
+        localStorage.setItem(key, JSON.stringify(logs));
+      } catch (e) {
+        console.warn("Vision Lab log save failed:", e);
+      }
+    }
+
+    const field = document.getElementById("field");
+    const fieldOverlay = document.getElementById("fieldOverlay");
+    const hintEl = document.getElementById("hint");
+    const statusEl = document.getElementById("status");
+
+    const sessionTimeInput = document.getElementById("sessionTimeInput");
+    const sessionTimeValue = document.getElementById("sessionTimeValue");
+    const peripheralInput = document.getElementById("peripheralInput");
+    const peripheralValue = document.getElementById("peripheralValue");
+    const minIntervalInput = document.getElementById("minIntervalInput");
+    const minIntervalValue = document.getElementById("minIntervalValue");
+
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const hitCountEl = document.getElementById("hitCount");
+    const scanRateEl = document.getElementById("scanRate");
+    const avgReactionEl = document.getElementById("avgReaction");
+    const rightRatioEl = document.getElementById("rightRatio");
+    const upRatioEl = document.getElementById("upRatio");
+    const sessionCountEl = document.getElementById("sessionCount");
+    const historyListEl = document.getElementById("historyList");
+
+    let state = "idle"; // "idle" | "running" | "finished"
+    let targetDot = null;
+
+    let sessionStartTime = null;
+    let sessionEndTime = null;
+    let sessionDurationMs = 0;
+
+    let lastSpawnTime = null;
+    let minIntervalMs = 150;
+
+    let hits = 0;
+    let reactionTimes = [];
+    let positions = []; // {x, y, cx, cy}
+
+    let fieldCenter = { x: 0, y: 0 };
+    let fieldRadius = 0;
+
+    let trials = [];
+    let trialIdCounter = 1;
+
+    /* ▼ UI 更新 ▼ */
+    sessionTimeInput.addEventListener("input", () => {
+      sessionTimeValue.textContent = sessionTimeInput.value;
+    });
+    peripheralInput.addEventListener("input", () => {
+      peripheralValue.textContent = peripheralInput.value;
+    });
+    minIntervalInput.addEventListener("input", () => {
+      minIntervalValue.textContent = minIntervalInput.value;
+    });
+
+    /* ▼ ボタン ▼ */
+    startBtn.addEventListener("click", () => {
+      if (state === "running") return;
+      startSession();
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (state !== "running") return;
+      endSession(true);
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (trials.length === 0) {
+        alert("まだトレーニング履歴がありません。");
+        return;
+      }
+      downloadCSV();
+    });
+
+    function setupFieldGeometry() {
+      const rect = field.getBoundingClientRect();
+      fieldRadius = rect.width / 2;
+      fieldCenter = { x: rect.width / 2, y: rect.height / 2 };
+    }
+
+    window.addEventListener("load", () => {
+      setupFieldGeometry();
+      updateScanChart(); // 既存ログから初期表示
+    });
+    window.addEventListener("resize", setupFieldGeometry);
+
+    function startSession() {
+      setupFieldGeometry();
+      clearTarget();
+
+      state = "running";
+      sessionDurationMs = parseInt(sessionTimeInput.value, 10) * 1000;
+      minIntervalMs = parseInt(minIntervalInput.value, 10);
+
+      hits = 0;
+      reactionTimes = [];
+      positions = [];
+
+      sessionStartTime = performance.now();
+      sessionEndTime = sessionStartTime + sessionDurationMs;
+      lastSpawnTime = null;
+
+      hitCountEl.textContent = "0";
+      scanRateEl.textContent = "-";
+      avgReactionEl.textContent = "-";
+      rightRatioEl.textContent = "-";
+      upRatioEl.textContent = "-";
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      fieldOverlay.classList.remove("visible");
+      fieldOverlay.classList.add("hidden");
+
+      statusEl.textContent = "セッション中：ターゲットを見つけたらすぐクリック！";
+      hintEl.textContent = "";
+
+      spawnTarget();
+      requestAnimationFrame(tick);
+    }
+
+    function tick(now) {
+      if (state !== "running") return;
+
+      if (now >= sessionEndTime) {
+        endSession(false);
+        return;
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    function endSession(forced) {
+      state = "finished";
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      clearTarget();
+
+      const now = performance.now();
+      const actualDuration = now - sessionStartTime;
+      const durationSec = actualDuration / 1000;
+      const scansPerMin = durationSec > 0 ? (hits / durationSec) * 60 : 0;
+
+      const avgReaction = reactionTimes.length
+        ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
+        : NaN;
+
+      // 左右・上下バランス
+      let rightCount = 0;
+      let upCount = 0;
+      positions.forEach(pos => {
+        const dx = pos.x - pos.cx;
+        const dy = pos.y - pos.cy;
+        if (dx > 0) rightCount++;
+        if (dy < 0) upCount++; // 上側
+      });
+      const posCount = positions.length || 1;
+      const rightRatio = (rightCount / posCount) * 100;
+      const upRatio = (upCount / posCount) * 100;
+
+      hitCountEl.textContent = hits.toString();
+      scanRateEl.textContent = scansPerMin ? scansPerMin.toFixed(1) : "-";
+      avgReactionEl.textContent = isNaN(avgReaction) ? "-" : avgReaction.toFixed(0);
+      rightRatioEl.textContent = positions.length ? rightRatio.toFixed(1) : "-";
+      upRatioEl.textContent = positions.length ? upRatio.toFixed(1) : "-";
+
+      const sec = durationSec.toFixed(1);
+      statusEl.textContent = forced
+        ? `セッションを手動終了しました（${sec} 秒）。`
+        : `セッション終了：${sec} 秒間で ${hits} 回スキャンしました。`;
+      hintEl.textContent = "「スキャン頻度（回数/分）」と反応時間を確認していきましょう。";
+
+      const trial = {
+        id: trialIdCounter++,
+        time: new Date(),
+        durationSec: durationSec,
+        hits: hits,
+        scansPerMin: scansPerMin,
+        avgReactionMs: avgReaction,
+        rightRatio: rightRatio,
+        upRatio: upRatio,
+        peripheralPct: parseInt(peripheralInput.value, 10) / 100,
+        minIntervalMs: minIntervalMs
+      };
+      trials.push(trial);
+      updateSessionCount();
+      appendHistoryItem(trial);
+
+      // ★ Vision Lab 共通ログに保存
+      saveVisionLabLog("scan", {
+        durationSec,
+        hits,
+        scansPerMin,
+        avgReactionMs: avgReaction,
+        rightRatioPercent: rightRatio,
+        upRatioPercent: upRatio
+      });
+
+      // ★ ミニグラフ更新
+      updateScanChart();
+    }
+
+    function clearTarget() {
+      if (targetDot) {
+        targetDot.remove();
+        targetDot = null;
+      }
+    }
+
+    function spawnTarget() {
+      clearTarget();
+
+      const peripheralPct = parseInt(peripheralInput.value, 10) / 100;
+      const minR = fieldRadius * peripheralPct;
+      const maxR = fieldRadius * 0.95;
+
+      let attempts = 0;
+      let x, y;
+      while (attempts < 20) {
+        const theta = Math.random() * Math.PI * 2;
+        const r = minR + (maxR - minR) * Math.random();
+        x = fieldCenter.x + r * Math.cos(theta);
+        y = fieldCenter.y + r * Math.sin(theta);
+
+        const dx = x - fieldCenter.x;
+        const dy = y - fieldCenter.y;
+        if (dx * dx + dy * dy <= fieldRadius * fieldRadius) break;
+        attempts++;
+      }
+
+      targetDot = document.createElement("div");
+      targetDot.className = "dot-target";
+      targetDot.style.left = `${x}px`;
+      targetDot.style.top = `${y}px`;
+
+      targetDot.addEventListener("click", onTargetClick, { once: true });
+
+      field.appendChild(targetDot);
+
+      lastSpawnTime = performance.now();
+      positions.push({ x, y, cx: fieldCenter.x, cy: fieldCenter.y });
+    }
+
+    function onTargetClick() {
+      if (state !== "running") return;
+      const now = performance.now();
+      if (lastSpawnTime != null) {
+        const rt = now - lastSpawnTime;
+        reactionTimes.push(rt);
+      }
+
+      hits++;
+      hitCountEl.textContent = hits.toString();
+
+      clearTarget();
+
+      // 次のターゲット生成（最小間隔）
+      if (now + minIntervalMs >= sessionEndTime) {
+        return;
+      }
+
+      setTimeout(() => {
+        if (state !== "running") return;
+        const currentTime = performance.now();
+        if (currentTime >= sessionEndTime) return;
+        spawnTarget();
+      }, minIntervalMs);
+    }
+
+    function updateSessionCount() {
+      sessionCountEl.textContent = trials.length.toString();
+    }
+
+    function appendHistoryItem(trial) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+
+      item.innerHTML = `
+        <div class="history-metric">
+          #${trial.id}
+          スキャン頻度 ${trial.scansPerMin.toFixed(1)} 回/分
+          ｜ヒット ${trial.hits} 回
+        </div>
+        <div class="history-meta">
+          ${formatTime(trial.time)}
+          ｜時間 ${trial.durationSec.toFixed(1)}s
+          ｜平均RT ${isNaN(trial.avgReactionMs) ? "-" : trial.avgReactionMs.toFixed(0)}ms
+          ｜右 ${trial.rightRatio.toFixed(1)}%
+          ｜上 ${trial.upRatio.toFixed(1)}%
+          ｜周辺${(trial.peripheralPct * 100).toFixed(0)}%
+        </div>
+      `;
+      historyListEl.prepend(item);
+    }
+
+    function formatTime(date) {
+      const d = (date instanceof Date) ? date : new Date(date);
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      const s = String(d.getSeconds()).padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    }
+
+    function downloadCSV() {
+      const header = [
+        "session_id",
+        "datetime",
+        "duration_sec",
+        "hits",
+        "scans_per_min",
+        "avg_reaction_ms",
+        "right_ratio_percent",
+        "up_ratio_percent",
+        "peripheral_pct",
+        "min_interval_ms"
+      ];
+
+      const rows = trials.map(t => {
+        const dt = t.time.toISOString();
+        return [
+          t.id,
+          dt,
+          t.durationSec.toFixed(3),
+          t.hits,
+          t.scansPerMin.toFixed(3),
+          isNaN(t.avgReactionMs) ? "" : t.avgReactionMs.toFixed(3),
+          t.rightRatio.toFixed(3),
+          t.upRatio.toFixed(3),
+          t.peripheralPct.toFixed(3),
+          t.minIntervalMs
+        ];
+      });
+
+      const csv = [header.join(","), ...rows.map(r => r.join(","))].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      a.download = `vision_scan_frequency_${timestamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /* ▼ スキャン専用ログ読み込み＆チャート ▼ */
+    function loadScanLogs() {
+      try {
+        const raw = localStorage.getItem("visionLabLogs");
+        if (!raw) return [];
+        const all = JSON.parse(raw);
+        if (!Array.isArray(all)) return [];
+        return all.filter(log =>
+          log.tool === "scan" &&
+          typeof log.scansPerMin === "number"
+        );
+      } catch (e) {
+        console.warn("read logs failed:", e);
+        return [];
+      }
+    }
+
+    let scanChartInstance = null;
+
+    function updateScanChart() {
+      const logs = loadScanLogs();
+      if (!logs.length) {
+        if (scanChartInstance) {
+          scanChartInstance.destroy();
+          scanChartInstance = null;
+        }
+        return;
+      }
+
+      // 時間順
+      logs.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      const recent = logs.slice(-10);
+
+      const labels = recent.map((log, idx) => {
+        const d = new Date(log.time);
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${m}/${day} #${idx + 1}`;
+      });
+
+      const values = recent.map(log => log.scansPerMin);
+
+      const canvas = document.getElementById("scanChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      if (scanChartInstance) {
+        scanChartInstance.destroy();
+      }
+
+      scanChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "スキャン頻度(回/分)",
+            data: values,
+            backgroundColor: "rgba(96,165,250,0.8)"
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.parsed.y.toFixed(1)} 回/分`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "#9ca3af",
+                font: { size: 10 }
+              },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: "#9ca3af",
+                font: { size: 10 }
+              },
+              grid: {
+                color: "rgba(148,163,184,0.25)"
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
