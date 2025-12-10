@@ -23,6 +23,13 @@
       --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.65);
     }
 
+    .field-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+
     * { box-sizing: border-box; }
 
     body {
@@ -531,8 +538,11 @@
             </div>
           </div>
           <div id="hint" class="hint-text"></div>
-        </div>
-      </section>
+       <div class="field-actions">
+      <button id="startBtn" class="primary">▶ トライ開始</button>
+    </div>
+  </div>
+</section>
 
       <!-- 右：コントロール＆スコア -->
       <section class="card">
@@ -567,10 +577,10 @@
           </div>
 
           <div class="button-row">
-            <button id="startBtn" class="primary">▶ セッション開始</button>
-            <button id="stopBtn" class="ghost" disabled>■ 強制終了</button>
-            <button id="downloadBtn" class="ghost">CSVダウンロード</button>
-          </div>
+  <button id="resetBtn" class="ghost">リセット</button>
+  <button id="downloadBtn" class="ghost">CSVダウンロード</button>
+</div>
+
 
           <div id="status" class="status-text"></div>
 
