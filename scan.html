@@ -662,7 +662,6 @@
     const minIntervalValue = document.getElementById("minIntervalValue");
 
     const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
     const downloadBtn = document.getElementById("downloadBtn");
 
     const hitCountEl = document.getElementById("hitCount");
@@ -710,10 +709,6 @@
       startSession();
     });
 
-    stopBtn.addEventListener("click", () => {
-      if (state !== "running") return;
-      endSession(true);
-    });
 
     downloadBtn.addEventListener("click", () => {
       if (trials.length === 0) {
@@ -758,8 +753,7 @@
       upRatioEl.textContent = "-";
 
       startBtn.disabled = true;
-      stopBtn.disabled = false;
-
+      
       fieldOverlay.classList.remove("visible");
       fieldOverlay.classList.add("hidden");
 
@@ -784,8 +778,7 @@
     function endSession(forced) {
       state = "finished";
       startBtn.disabled = false;
-      stopBtn.disabled = true;
-
+      
       clearTarget();
 
       const now = performance.now();
